@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import Icon from './Icon';
 import { StatCard } from './shared';
-import { GRADES } from './data';
 
-export const GradesScreen = () => {
-  const [whatif, setWhatif] = useState({ 'CS-2010': 88, 'CS-3050': 85 });
+export const GradesScreen = ({ grades = [] }) => {
+  const inProgress = grades.filter(g => g.status === 'in-progress');
+  const initWhatif = Object.fromEntries(inProgress.map(g => [g.course_code, 80]));
+  const [whatif, setWhatif] = useState(initWhatif);
 
-  const completed = GRADES.filter(g => g.status === 'completed');
-  const inProgress = GRADES.filter(g => g.status === 'in-progress');
+  const completed = grades.filter(g => g.status === 'completed');
 
   const calcAvg = (entries) => {
     const w = entries.reduce((s, g) => s + g.credits, 0);
@@ -15,7 +15,7 @@ export const GradesScreen = () => {
     return w ? (sum / w) : 0;
   };
   const currentAvg = calcAvg(completed);
-  const projected = calcAvg([...completed, ...inProgress.map(g => ({ ...g, grade: whatif[g.code] || 80 }))]);
+  const projected = calcAvg([...completed, ...inProgress.map(g => ({ ...g, grade: whatif[g.course_code] || 80 }))]);
 
   return (
     <div className="app-content" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -64,9 +64,9 @@ export const GradesScreen = () => {
           </thead>
           <tbody>
             {completed.map(g => (
-              <tr key={g.code} style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                <td style={{ padding: '12px 0', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-muted)' }}>{g.code}</td>
-                <td style={{ padding: '12px 0', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, color: 'var(--fg-strong)' }}>{g.name}</td>
+              <tr key={g.id} style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                <td style={{ padding: '12px 0', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-muted)' }}>{g.course_code}</td>
+                <td style={{ padding: '12px 0', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, color: 'var(--fg-strong)' }}>{g.course_name}</td>
                 <td style={{ padding: '12px 0', fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--fg-default)' }}>{g.semester}</td>
                 <td style={{ padding: '12px 0', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-default)' }}>{g.credits}</td>
                 <td style={{ padding: '12px 0', textAlign: 'end', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: g.grade >= 90 ? '#15803d' : g.grade >= 80 ? 'var(--fg-strong)' : '#b45309', fontVariantNumeric: 'tabular-nums' }}>{g.grade}</td>
@@ -85,14 +85,14 @@ export const GradesScreen = () => {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {inProgress.map(g => (
-            <div key={g.code} style={{ display: 'grid', gridTemplateColumns: '1fr 60px 1.5fr 80px', alignItems: 'center', gap: 16, padding: '8px 0', borderTop: '1px solid var(--border-subtle)' }}>
+            <div key={g.id} style={{ display: 'grid', gridTemplateColumns: '1fr 60px 1.5fr 80px', alignItems: 'center', gap: 16, padding: '8px 0', borderTop: '1px solid var(--border-subtle)' }}>
               <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-muted)' }}>{g.code}</div>
-                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, color: 'var(--fg-strong)' }}>{g.name}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-muted)' }}>{g.course_code}</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, color: 'var(--fg-strong)' }}>{g.course_name}</div>
               </div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-muted)' }}>{g.credits} נ"ז</div>
-              <input type="range" min="60" max="100" value={whatif[g.code] || 80} onChange={e => setWhatif({ ...whatif, [g.code]: parseInt(e.target.value) })} style={{ width: '100%', accentColor: '#22c55e' }} />
-              <input type="number" min="60" max="100" value={whatif[g.code] || 80} onChange={e => setWhatif({ ...whatif, [g.code]: parseInt(e.target.value) || 0 })} className="input" style={{ width: 64, padding: '8px 10px', textAlign: 'center', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16 }} />
+              <input type="range" min="60" max="100" value={whatif[g.course_code] || 80} onChange={e => setWhatif({ ...whatif, [g.course_code]: parseInt(e.target.value) })} style={{ width: '100%', accentColor: '#22c55e' }} />
+              <input type="number" min="60" max="100" value={whatif[g.course_code] || 80} onChange={e => setWhatif({ ...whatif, [g.course_code]: parseInt(e.target.value) || 0 })} className="input" style={{ width: 64, padding: '8px 10px', textAlign: 'center', fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16 }} />
             </div>
           ))}
         </div>

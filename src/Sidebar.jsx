@@ -1,19 +1,28 @@
 import Icon from './Icon';
-import { CURRENT_STUDENT } from './data';
 
-export const Sidebar = ({ active, onNavigate }) => {
-  const items = [
-    { key: 'dashboard',  label: 'דף הבית',          icon: 'logo' },
-    { key: 'schedule',   label: 'מערכת השעות',      icon: 'calendar', count: 6 },
-    { key: 'catalog',    label: 'קטלוג קורסים',     icon: 'book' },
-    { key: 'course',     label: 'פרטי קורס',        icon: 'book' },
-    { key: 'grades',     label: 'ציונים',           icon: 'graduation', count: 2 },
-    { key: 'whatif',     label: 'סימולטור What-if', icon: 'flask' },
-    { key: 'recommend',  label: 'המלצות',           icon: 'sparkles' },
-    { key: 'friends',    label: 'חברים',             icon: 'users' },
-    { key: 'erd',        label: 'ארכיטקטורת DB',    icon: 'database' },
-    { key: 'settings',   label: 'הגדרות',            icon: 'settings' },
+export const Sidebar = ({ active, onNavigate, student }) => {
+  const planning = [
+    { key: 'dashboard', label: 'דף הבית',      icon: 'logo' },
+    { key: 'roadmap',   label: 'מפת התואר',    icon: 'map' },
+    { key: 'schedule',  label: 'מערכת השעות',  icon: 'calendar' },
+    { key: 'catalog',   label: 'קטלוג קורסים', icon: 'book' },
   ];
+  const academic = [
+    { key: 'grades',    label: 'ציונים',         icon: 'graduation' },
+    { key: 'recommend', label: 'המלצות',          icon: 'sparkles' },
+  ];
+  const social = [
+    { key: 'friends',  label: 'חברים',           icon: 'users' },
+    { key: 'erd',      label: 'ארכיטקטורת DB',   icon: 'database' },
+    { key: 'settings', label: 'הגדרות',           icon: 'settings' },
+  ];
+
+  const NavItem = ({ item }) => (
+    <button className={`sb-item ${active === item.key ? 'active' : ''}`} onClick={() => onNavigate(item.key)}>
+      <Icon name={item.icon} size={18} />
+      <span>{item.label}</span>
+    </button>
+  );
 
   return (
     <aside className="sidebar">
@@ -26,36 +35,25 @@ export const Sidebar = ({ active, onNavigate }) => {
       </div>
 
       <div className="sb-section-label">תכנון</div>
-      {items.slice(0, 4).map(it => (
-        <button key={it.key} className={`sb-item ${active === it.key ? 'active' : ''}`} onClick={() => onNavigate(it.key)}>
-          <Icon name={it.icon} size={18} />
-          <span>{it.label}</span>
-          {it.count && <span className="count">{it.count}</span>}
-        </button>
-      ))}
+      {planning.map(it => <NavItem key={it.key} item={it} />)}
 
       <div className="sb-section-label">אקדמיה</div>
-      {items.slice(4, 7).map(it => (
-        <button key={it.key} className={`sb-item ${active === it.key ? 'active' : ''}`} onClick={() => onNavigate(it.key)}>
-          <Icon name={it.icon} size={18} />
-          <span>{it.label}</span>
-          {it.count && <span className="count">{it.count}</span>}
-        </button>
-      ))}
+      {academic.map(it => <NavItem key={it.key} item={it} />)}
 
-      <div className="sb-section-label">חברתי</div>
-      {items.slice(7, 10).map(it => (
-        <button key={it.key} className={`sb-item ${active === it.key ? 'active' : ''}`} onClick={() => onNavigate(it.key)}>
-          <Icon name={it.icon} size={18} />
-          <span>{it.label}</span>
-        </button>
-      ))}
+      <div className="sb-section-label">מערכת</div>
+      {social.map(it => <NavItem key={it.key} item={it} />)}
 
       <div className="sb-user">
-        <span className="avatar av-purple" style={{ width: 36, height: 36, fontSize: 14 }}>{CURRENT_STUDENT.initial}</span>
+        <span className="avatar av-purple" style={{ width: 36, height: 36, fontSize: 14 }}>
+          {student?.initial ?? '?'}
+        </span>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, color: 'var(--fg-strong)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{CURRENT_STUDENT.name}</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)' }}>{CURRENT_STUDENT.id}</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, color: 'var(--fg-strong)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {student?.name ?? ''}
+          </div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)' }}>
+            {student?.program ?? ''}
+          </div>
         </div>
       </div>
     </aside>

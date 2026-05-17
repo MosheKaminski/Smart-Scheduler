@@ -1,6 +1,5 @@
 import Icon from './Icon';
 import { Chip, DiffChip, StatCard } from './shared';
-import { COURSES, RECOMMENDED } from './data';
 
 const TodayClass = ({ c, isNow }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderTop: '1px solid var(--border-subtle)' }}>
@@ -16,28 +15,32 @@ const TodayClass = ({ c, isNow }) => (
   </div>
 );
 
-export const DashboardScreen = ({ onNavigate }) => {
-  const todayCourses = COURSES.filter(c => c.day === 'mon').sort((a, b) => a.start - b.start);
+export const DashboardScreen = ({ courses, student, recommendations, onNavigate }) => {
+  const todayCourses = (courses ?? []).filter(c => c.day === 'mon').sort((a, b) => a.start - b.start);
+  const firstName = student?.name?.split(' ')[0] ?? 'סטודנט';
+  const gpa = student?.gpa ?? 0;
+  const credits = student?.credits ?? 0;
+
   return (
     <div className="app-content" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <div className="card padded" style={{ background: 'linear-gradient(135deg, #22c55e 0%, #65a30d 100%)', color: 'white', border: 0, boxShadow: 'var(--shadow-md)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, opacity: 0.8, letterSpacing: '0.04em', textTransform: 'uppercase' }}>שלום, דנה</div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 32, letterSpacing: '-0.02em', margin: '6px 0 8px' }}>3 שיעורים היום, הראשון בעוד 12 דקות</h1>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, opacity: 0.8, letterSpacing: '0.04em', textTransform: 'uppercase' }}>שלום, {firstName}</div>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 32, letterSpacing: '-0.02em', margin: '6px 0 8px' }}>{todayCourses.length} שיעורים היום.</h1>
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
               <button className="btn btn-sm" style={{ background: 'white', color: 'var(--brand-press)', boxShadow: '0 2px 0 0 rgba(0,0,0,0.18)' }} onClick={() => onNavigate('schedule')}>פתח מערכת שעות</button>
               <button className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.18)', color: 'white', boxShadow: 'none' }} onClick={() => onNavigate('recommend')}>+ הוסף קורס</button>
             </div>
           </div>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 88, lineHeight: 1, opacity: 0.18 }}>88</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 88, lineHeight: 1, opacity: 0.18 }}>{credits}</div>
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-        <StatCard label="ממוצע מצטבר" value="87" unit=".4" trend="↑ 1.2 מהסמסטר הקודם" />
-        <StatCard label='נ"ז שהושלמו' value="88" unit="/120" trend="73% מהתואר" trendKind="flat" />
-        <StatCard label="עומס סמסטר" value="6" unit="/8" trend="⚠ 4 קורסים קשים" trendKind="down" />
+        <StatCard label="ממוצע מצטבר" value={String(gpa).split('.')[0]} unit={'.' + (String(gpa).split('.')[1] || '0')} trend="↑ 1.2 מהסמסטר הקודם" />
+        <StatCard label='נ"ז שהושלמו' value={String(credits)} unit={`/${student?.credits_required ?? 120}`} trend={`${Math.round(credits / (student?.credits_required ?? 120) * 100)}% מהתואר`} trendKind="flat" />
+        <StatCard label="עומס סמסטר" value={String(courses?.length ?? 0)} unit="/8" trend="⚠ בדוק קורסים קשים" trendKind="down" />
         <StatCard label="דירוג ממוצע" value="4.4" unit="★" trend="ממרצים שדירגת" trendKind="flat" />
       </div>
 
@@ -46,7 +49,7 @@ export const DashboardScreen = ({ onNavigate }) => {
           <div className="section-head">
             <div>
               <h2>היום · יום שני</h2>
-              <div className="sub">3 שיעורים · 30 בנובמבר</div>
+              <div className="sub">{todayCourses.length} שיעורים</div>
             </div>
             <button className="btn btn-ghost btn-sm" style={{ boxShadow: 'none' }} onClick={() => onNavigate('schedule')}>ראה הכל ←</button>
           </div>
@@ -96,7 +99,7 @@ export const DashboardScreen = ({ onNavigate }) => {
           <button className="btn btn-ghost btn-sm" style={{ boxShadow: 'none' }} onClick={() => onNavigate('recommend')}>ראה את כל ההמלצות ←</button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-          {RECOMMENDED.map(r => (
+          {(recommendations ?? []).map(r => (
             <div key={r.code} className="card tight" style={{ background: 'var(--neutral-50)', cursor: 'pointer' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-muted)', fontWeight: 600 }}>{r.code}</div>

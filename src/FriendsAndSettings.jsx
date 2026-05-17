@@ -1,8 +1,7 @@
 import Icon from './Icon';
 import { Chip } from './shared';
-import { FRIENDS, CURRENT_STUDENT } from './data';
 
-export const FriendsScreen = () => {
+export const FriendsScreen = ({ friends = [] }) => {
   return (
     <div className="app-content" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
@@ -11,7 +10,7 @@ export const FriendsScreen = () => {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
-        {FRIENDS.map(f => (
+        {friends.map(f => (
           <div key={f.id} className="card padded" style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
             <div className={`avatar ${f.color}`} style={{ width: 52, height: 52, fontSize: 22 }}>{f.initial}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -20,7 +19,7 @@ export const FriendsScreen = () => {
               <div style={{ marginTop: 10 }}>
                 <div className="t-overline" style={{ marginBottom: 4 }}>קורסים משותפים</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {f.shared.map(s => <Chip key={s} kind="brand">{s}</Chip>)}
+                  {(f.shared ?? []).map(s => <Chip key={s} kind="brand">{s}</Chip>)}
                 </div>
               </div>
             </div>
@@ -45,7 +44,7 @@ export const FriendsScreen = () => {
   );
 };
 
-export const SettingsScreen = ({ theme, setTheme }) => {
+export const SettingsScreen = ({ student, theme, setTheme, onSignOut }) => {
   return (
     <div className="app-content" style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 720 }}>
       <div>
@@ -56,21 +55,21 @@ export const SettingsScreen = ({ theme, setTheme }) => {
       <div className="card padded">
         <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--fg-strong)', margin: '0 0 14px' }}>פרופיל</h2>
         <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 16 }}>
-          <div className="avatar av-purple" style={{ width: 64, height: 64, fontSize: 26, background: '#22c55e' }}>{CURRENT_STUDENT.initial}</div>
+          <div className="avatar av-purple" style={{ width: 64, height: 64, fontSize: 26, background: '#22c55e' }}>{student?.initial}</div>
           <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--fg-strong)' }}>{CURRENT_STUDENT.name}</div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--fg-muted)' }}>{CURRENT_STUDENT.program}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: 'var(--fg-strong)' }}>{student?.name}</div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--fg-muted)' }}>{student?.program}</div>
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           <div className="field">
             <label>תעודת זהות סטודנט <span className="pk-tag">PK</span></label>
-            <input className="input" value={CURRENT_STUDENT.id} readOnly />
+            <input className="input" value={student?.id ?? ''} readOnly />
             <div className="help">מזהה ייחודי לא ניתן לשינוי</div>
           </div>
           <div className="field">
             <label>אימייל</label>
-            <input className="input" value={CURRENT_STUDENT.email} readOnly />
+            <input className="input" value={student?.email ?? ''} readOnly />
           </div>
         </div>
       </div>
@@ -114,6 +113,21 @@ export const SettingsScreen = ({ theme, setTheme }) => {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="card padded" style={{ borderColor: '#fee2e2', background: '#fff5f5' }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: '#b91c1c', margin: '0 0 14px' }}>חשבון</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, color: 'var(--fg-strong)' }}>התנתקות מהמערכת</div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--fg-muted)', marginTop: 2 }}>תצא מהחשבון שלך במכשיר זה</div>
+          </div>
+          <button onClick={onSignOut} style={{
+            padding: '8px 18px', borderRadius: 10, border: '1.5px solid #fca5a5',
+            background: 'white', color: '#b91c1c', cursor: 'pointer',
+            fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13,
+          }}>התנתק</button>
+        </div>
       </div>
     </div>
   );

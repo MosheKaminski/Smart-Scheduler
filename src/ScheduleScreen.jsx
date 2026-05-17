@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Icon from './Icon';
 import { DAYS, HOURS } from './data';
 
-export const ScheduleScreen = ({ courses, setCourses, onCoursePick }) => {
+export const ScheduleScreen = ({ courses, onRemoveCourse, onCoursePick }) => {
   const [semester, setSemester] = useState('spring');
 
   const grid = {};
@@ -18,7 +18,7 @@ export const ScheduleScreen = ({ courses, setCourses, onCoursePick }) => {
     biz:  { bg: 'linear-gradient(135deg, #fffbeb, #fef2f2)', border: '#fef3c7' },
   })[cat] || { bg: 'white', border: 'var(--border-subtle)' };
 
-  const removeCourse = (code) => setCourses(courses.filter(c => c.code !== code));
+  const removeCourse = (code) => onRemoveCourse && onRemoveCourse(code);
 
   return (
     <div className="app-content" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

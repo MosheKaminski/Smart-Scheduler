@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Icon from './Icon';
 import { Chip, DiffChip } from './shared';
-import { RECOMMENDED, FRIENDS, DAYS, HOURS } from './data';
+import { DAYS, HOURS } from './data';
+import { SEMESTERS, DEFAULT_SEMESTER } from './semesters';
 
 export const ToastStack = ({ toasts, dismiss }) => (
   <div className="toast-stack">
@@ -94,7 +95,7 @@ export const NotificationsPopover = ({ onClose, onNav }) => {
   );
 };
 
-export const CommandPalette = ({ open, onClose, onNav, onCoursePick, courses }) => {
+export const CommandPalette = ({ open, onClose, onNav, onCoursePick, courses, recommendations = [], friends = [] }) => {
   const [q, setQ] = useState('');
   const [active, setActive] = useState(0);
   const inputRef = useRef(null);
@@ -102,7 +103,7 @@ export const CommandPalette = ({ open, onClose, onNav, onCoursePick, courses }) 
   useEffect(() => { if (open) { setQ(''); setActive(0); setTimeout(() => inputRef.current?.focus(), 60); } }, [open]);
 
   const items = useMemo(() => {
-    const allCourses = [...courses, ...RECOMMENDED];
+    const allCourses = [...courses, ...recommendations];
     const actions = [
       { kind: 'action', icon: 'calendar',   label: 'פתח מערכת שעות',        meta: 'G S', go: () => onNav('schedule') },
       { kind: 'action', icon: 'graduation', label: 'גליון ציונים',           meta: 'G G', go: () => onNav('grades') },
@@ -114,7 +115,7 @@ export const CommandPalette = ({ open, onClose, onNav, onCoursePick, courses }) 
       { kind: 'action', icon: 'plus',       label: 'הוסף קורס לסמסטר',       meta: 'A',   go: () => { onClose(); window.appBus?.openAddCourse(); } },
     ];
     const courseItems = allCourses.map(c => ({ kind: 'course', icon: 'book', label: c.name, meta: c.code, go: () => onCoursePick(c) }));
-    const friendItems = FRIENDS.map(f => ({ kind: 'friend', icon: 'users', label: f.name, meta: f.id, go: () => onNav('friends') }));
+    const friendItems = friends.map(f => ({ kind: 'friend', icon: 'users', label: f.name, meta: f.id, go: () => onNav('friends') }));
     const all = [...actions, ...courseItems, ...friendItems];
     if (!q.trim()) return all;
     const needle = q.toLowerCase();
@@ -177,16 +178,41 @@ export const CommandPalette = ({ open, onClose, onNav, onCoursePick, courses }) 
   );
 };
 
-export const AddCourseModal = ({ open, onClose, prefill, courses, onConfirm }) => {
-  const [day, setDay] = useState('tue');
-  const [start, setStart] = useState(10);
+export const AddCourseModal = ({ open, onClose, prefill, courses, onConfirm, defaultSemester }) => {
+  const [code, setCode]         = useState('');
+  const [name, setName]         = useState('');
+  const [credits, setCredits]   = useState(3);
+  const [lecturer, setLecturer] = useState('');
+  const [diff, setDiff]         = useState('medium');
+  const [category, setCategory] = useState('cs');
+  const [day, setDay]           = useState('tue');
+  const [start, setStart]       = useState(10);
   const [duration, setDuration] = useState(2);
-  const [room, setRoom] = useState('204');
+  const [room, setRoom]         = useState('204');
+  const [semester, setSemester] = useState(defaultSemester || DEFAULT_SEMESTER);
 
-  useEffect(() => { if (open && prefill) { setDay(prefill.day || 'tue'); setStart(prefill.start || 10); setDuration((prefill.end || 12) - (prefill.start || 10)); setRoom(prefill.room || '204'); } }, [open, prefill]);
+  useEffect(() => {
+    if (!open) return;
+    setSemester(defaultSemester || DEFAULT_SEMESTER);
+    if (prefill) {
+      setCode(prefill.code || '');
+      setName(prefill.name || '');
+      setCredits(prefill.credits || 3);
+      setLecturer(prefill.lecturer || '');
+      setDiff(prefill.diff || 'medium');
+      setCategory(prefill.category || 'cs');
+      setDay(prefill.day || 'tue');
+      setStart(prefill.start || 10);
+      setDuration((prefill.end || 12) - (prefill.start || 10));
+      setRoom(prefill.room || '204');
+    } else {
+      setCode(''); setName(''); setCredits(3); setLecturer('');
+      setDiff('medium'); setCategory('cs');
+      setDay('tue'); setStart(10); setDuration(2); setRoom('204');
+    }
+  }, [open, prefill, defaultSemester]);
 
   if (!open) return null;
-  const c = prefill || { code: 'NEW-1010', name: 'קורס חדש', credits: 3, lecturer: 'מרצה לדוגמא', diff: 'medium', rating: 4.3, category: 'cs' };
 
   const clashes = courses.filter(other => other.day === day && !(start + duration <= other.start || start >= other.end));
   const altSlots = [];
@@ -202,92 +228,150 @@ export const AddCourseModal = ({ open, onClose, prefill, courses, onConfirm }) =
     }
   }
 
+  const canSubmit = name.trim() && code.trim() && clashes.length === 0;
+  const COLORS = ['av-purple', 'av-pink', 'av-mint', 'av-sky', 'av-amber', 'av-coral'];
+
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="modal" style={{ width: 560, marginTop: '6vh', alignSelf: 'flex-start' }} onClick={e => e.stopPropagation()}>
+      <div className="modal" style={{ width: 580, marginTop: '4vh', alignSelf: 'flex-start' }} onClick={e => e.stopPropagation()}>
         <div className="modal-head">
           <div>
-            <h2 className="modal-title">הוסף קורס לסמסטר</h2>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--fg-muted)', marginTop: 4 }}>{c.code} · {c.credits} נ"ז</div>
+            <h2 className="modal-title">הרשמה לקורס</h2>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--fg-muted)', marginTop: 4 }}>הוסף קורס למפת התואר שלך</div>
           </div>
           <button className="btn-icon" onClick={onClose}><Icon name="x" size={16} /></button>
         </div>
-        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ position: 'relative', overflow: 'hidden', padding: '14px 16px', borderRadius: 14, background: 'var(--brand-soft)' }}>
-            <div style={{ position: 'absolute', insetInline: 0, top: 0, height: 4, background: 'linear-gradient(90deg, var(--brand), var(--accent))' }} />
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: 'var(--brand-press)' }}>{c.name}</div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--fg-default)', marginTop: 4 }}>{c.lecturer} · ★ {c.rating}</div>
-            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-              <DiffChip d={c.diff} />
-              <span className="chip chip-info">דרישות קדם הושלמו</span>
-            </div>
-          </div>
 
-          <div className="field">
-            <label>יום</label>
-            <div className="tabs" style={{ width: 'fit-content' }}>
-              {DAYS.map(d => (
-                <button key={d.key} className={`tab ${day === d.key ? 'active' : ''}`} onClick={() => setDay(d.key)}>{d.label}</button>
+        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* Semester picker */}
+          <div className="field" style={{ margin: 0 }}>
+            <label style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 12, color: 'var(--fg-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>סמסטר</label>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+              {SEMESTERS.map(s => (
+                <button key={s.id} type="button" onClick={() => setSemester(s.id)}
+                  className={semester === s.id ? 'chip chip-brand' : 'chip chip-outline'}
+                  style={{ cursor: 'pointer', padding: '6px 12px', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 12 }}>
+                  {s.label}
+                </button>
               ))}
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-            <div className="field">
-              <label>שעת התחלה</label>
-              <select className="input" value={start} onChange={e => setStart(+e.target.value)}>
-                {HOURS.map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>)}
-              </select>
+          {/* Course details section */}
+          <div style={{ background: 'var(--neutral-50)', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, color: 'var(--fg-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>פרטי הקורס</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 12 }}>
+              <div className="field" style={{ margin: 0 }}>
+                <label>קוד קורס</label>
+                <input className="input" placeholder="CS-1010" value={code} onChange={e => setCode(e.target.value.toUpperCase())} style={{ fontFamily: 'var(--font-mono)' }} />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>שם הקורס</label>
+                <input className="input" placeholder="מבוא למדעי המחשב" value={name} onChange={e => setName(e.target.value)} />
+              </div>
             </div>
-            <div className="field">
-              <label>משך</label>
-              <select className="input" value={duration} onChange={e => setDuration(+e.target.value)}>
-                <option value={1}>שעה</option>
-                <option value={2}>שעתיים</option>
-                <option value={3}>3 שעות</option>
-                <option value={4}>4 שעות</option>
-              </select>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 12 }}>
+              <div className="field" style={{ margin: 0 }}>
+                <label>נ"ז</label>
+                <input className="input" type="number" min={1} max={8} value={credits} onChange={e => setCredits(+e.target.value)} />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>מרצה</label>
+                <input className="input" placeholder='פרופ׳ כהן' value={lecturer} onChange={e => setLecturer(e.target.value)} />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>קטגוריה</label>
+                <select className="input" value={category} onChange={e => setCategory(e.target.value)}>
+                  <option value="cs">מדעי המחשב</option>
+                  <option value="math">מתמטיקה</option>
+                  <option value="biz">עסקים/משפט</option>
+                  <option value="other">אחר</option>
+                </select>
+              </div>
             </div>
-            <div className="field">
-              <label>חדר</label>
-              <input className="input" value={room} onChange={e => setRoom(e.target.value)} />
+            <div className="field" style={{ margin: 0 }}>
+              <label>רמת קושי</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[['easy','קל'], ['medium','בינוני'], ['hard','קשה'], ['brutal','רצחני']].map(([v, l]) => (
+                  <button key={v} onClick={() => setDiff(v)} className={`chip ${diff === v ? 'chip-brand' : 'chip-outline'}`} style={{ cursor: 'pointer', padding: '6px 14px', fontFamily: 'var(--font-display)', fontWeight: 700 }}>{l}</button>
+                ))}
+              </div>
             </div>
           </div>
 
+          {/* Schedule section */}
+          <div style={{ background: 'var(--neutral-50)', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, color: 'var(--fg-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>מועד השיעור</div>
+            <div className="field" style={{ margin: 0 }}>
+              <label>יום</label>
+              <div className="tabs" style={{ width: 'fit-content' }}>
+                {DAYS.map(d => (
+                  <button key={d.key} className={`tab ${day === d.key ? 'active' : ''}`} onClick={() => setDay(d.key)}>{d.label}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <div className="field" style={{ margin: 0 }}>
+                <label>שעת התחלה</label>
+                <select className="input" value={start} onChange={e => setStart(+e.target.value)}>
+                  {HOURS.map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>)}
+                </select>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>משך</label>
+                <select className="input" value={duration} onChange={e => setDuration(+e.target.value)}>
+                  <option value={1}>שעה</option>
+                  <option value={2}>שעתיים</option>
+                  <option value={3}>3 שעות</option>
+                  <option value={4}>4 שעות</option>
+                </select>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>חדר</label>
+                <input className="input" value={room} onChange={e => setRoom(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          {/* Conflict check */}
           {clashes.length > 0 ? (
-            <div style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--coral-50)', border: '1px solid var(--coral-100)' }}>
+            <div style={{ padding: '14px 16px', borderRadius: 12, background: 'var(--coral-50)', border: '1px solid var(--coral-100)' }}>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--coral-700)' }}>
                 <Icon name="alert" size={18} />
                 <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 13 }}>התנגשות עם {clashes.length === 1 ? `"${clashes[0].name}"` : `${clashes.length} קורסים`}</div>
               </div>
               {altSlots.length > 0 && (
-                <div style={{ marginTop: 12 }}>
+                <div style={{ marginTop: 10 }}>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--coral-700)', marginBottom: 8 }}>חלונות פנויים מומלצים:</div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {altSlots.map((s, i) => {
-                      const dayLabel = DAYS.find(d => d.key === s.day)?.label;
-                      return (
-                        <button key={i} className="chip chip-outline" style={{ cursor: 'pointer', padding: '7px 12px' }} onClick={() => { setDay(s.day); setStart(s.start); }}>
-                          {dayLabel} · {String(s.start).padStart(2, '0')}:00
-                        </button>
-                      );
-                    })}
+                    {altSlots.map((s, i) => (
+                      <button key={i} className="chip chip-outline" style={{ cursor: 'pointer', padding: '6px 12px' }}
+                        onClick={() => { setDay(s.day); setStart(s.start); }}>
+                        {DAYS.find(d => d.key === s.day)?.label} · {String(s.start).padStart(2, '0')}:00
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
             </div>
           ) : (
-            <div style={{ padding: '12px 14px', borderRadius: 14, background: 'var(--brand-soft)', display: 'flex', alignItems: 'center', gap: 10, color: 'var(--brand-press)', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13 }}>
-              <Icon name="check-circle" size={18} /> אין התנגשויות — אתה מוכן ללחוץ "הוסף"
+            <div style={{ padding: '10px 14px', borderRadius: 12, background: 'var(--brand-soft)', display: 'flex', alignItems: 'center', gap: 10, color: 'var(--brand-press)', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13 }}>
+              <Icon name="check-circle" size={18} /> אין התנגשויות
             </div>
           )}
         </div>
+
         <div className="modal-foot">
           <button className="btn btn-secondary" onClick={onClose}>ביטול</button>
-          <button className="btn btn-primary" disabled={clashes.length > 0} style={clashes.length > 0 ? { opacity: 0.5, pointerEvents: 'none' } : {}} onClick={() => {
-            onConfirm({ ...c, day, start, end: start + duration, room, color: ['av-brand', 'av-teal', 'av-amber', 'av-sky', 'av-coral', 'av-lime'][Math.floor(Math.random() * 6)], enrolled: c.enrolled || 60 });
-          }}>
-            <Icon name="check" size={14} /> הוסף לסמסטר
+          <button className="btn btn-primary" disabled={!canSubmit} style={!canSubmit ? { opacity: 0.45, pointerEvents: 'none' } : {}}
+            onClick={() => onConfirm({
+              code, name, credits, lecturer, diff, category, rating: 0,
+              day, start, end: start + duration, room, semester,
+              color: COLORS[Math.floor(Math.random() * COLORS.length)],
+              enrolled: 0,
+            })}>
+            <Icon name="check" size={14} /> הוסף לתואר
           </button>
         </div>
       </div>
