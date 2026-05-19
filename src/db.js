@@ -38,11 +38,12 @@ export async function getEnrolledCourses() {
 
 export async function addEnrollment(courseCode, conflict = false, semester = 'y1s1') {
   const id = await uid()
-  if (!id) return false
+  if (!id) throw new Error('לא מחובר')
   const { error } = await supabase
     .from('enrollments')
     .insert({ student_id: id, course_code: courseCode, conflict, semester, status: 'planned' })
-  return !error
+  if (error) throw error
+  return true
 }
 
 export async function updateEnrollment(courseCode, fields) {
@@ -109,9 +110,54 @@ export async function getFriends() {
     name: f.friend_name,
     initial: f.friend_initial,
     color: f.color,
-    shared: f.shared,
+    shared: f.shared ?? [],
     group: f.grp,
   }))
+}
+
+export async function addFriend(friend) {
+  const id = await uid()
+  if (!id) throw new Error('לא מחובר')
+  const { error } = await supabase.from('friends').insert({
+    student_id: id,
+    friend_id:      friend.id,
+    friend_name:    friend.name,
+    friend_initial: friend.initial,
+    color:          friend.color ?? 'av-brand',
+    shared:         friend.shared ?? [],
+    grp:            friend.grp ?? null,
+  })
+  if (error) throw error
+  return true
+}
+
+export async function removeFriend(friendId) {
+  const id = await uid()
+  if (!id) throw new Error('לא מחובר')
+  const { error } = await supabase.from('friends')
+    .delete().eq('student_id', id).eq('friend_id', friendId)
+  if (error) throw error
+  return true
+}
+
+export async function updateFriendGroup(friendId, grp) {
+  const id = await uid()
+  if (!id) throw new Error('לא מחובר')
+  const { error } = await supabase.from('friends')
+    .update({ grp }).eq('student_id', id).eq('friend_id', friendId)
+  if (error) throw error
+  return true
+}
+
+export async function searchStudents(q) {
+  const { data, error } = await supabase.rpc('search_students', { query: q })
+  if (error) return []
+  return data ?? []
+}
+
+export async function checkSearchRpc() {
+  const { error } = await supabase.rpc('search_students', { query: '__probe__' })
+  return !error
 }
 
 export async function getRecommendations() {

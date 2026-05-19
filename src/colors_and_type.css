@@ -3,7 +3,7 @@
    Ono Academic College green. Bold, playful, academic. Hebrew-first (RTL).
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;800;900&family=Assistant:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&family=Heebo:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
   /* ── Brand: Ono Green (primary) ──────────────────────────── */
@@ -71,7 +71,7 @@
   --neutral-900: #0f1310;
 
   /* ── Semantic surface + text (light theme default) ──────── */
-  --bg-base:      var(--neutral-50);
+  --bg-base:      #f3f7f4;
   --bg-surface:   var(--neutral-0);
   --bg-sunken:    var(--neutral-100);
   --bg-inverse:   var(--neutral-900);
@@ -100,9 +100,9 @@
   --diff-hard:    var(--coral-500);
 
   /* ── Type families ──────────────────────────────────────── */
-  --font-display: 'Frank Ruhl Libre', 'Assistant', 'Segoe UI', system-ui, serif;
-  --font-body:    'Assistant', 'Segoe UI', system-ui, sans-serif;
-  --font-num:     'Assistant', system-ui, sans-serif;
+  --font-display: 'Rubik', 'Heebo', 'Segoe UI', system-ui, sans-serif;
+  --font-body:    'Heebo', 'Rubik', 'Segoe UI', system-ui, sans-serif;
+  --font-num:     'Rubik', system-ui, sans-serif;
   --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* ── Type scale (base 16px) ─────────────────────────────── */

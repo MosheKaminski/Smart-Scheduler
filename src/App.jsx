@@ -7,6 +7,7 @@ import { ScheduleScreen } from './ScheduleScreen';
 import { CourseDetailScreen } from './CourseDetailScreen';
 import { GradesScreen } from './GradesScreen';
 import { RecommendScreen } from './RecommendScreen';
+import { WhatIfScreen } from './WhatIfScreen';
 import { CatalogScreen } from './CatalogScreen';
 import { FriendsScreen, SettingsScreen } from './FriendsAndSettings';
 import { ToastStack, NotificationsPopover, CommandPalette, AddCourseModal, popCelebration } from './AppExtras';
@@ -16,8 +17,18 @@ import { RoadmapScreen } from './RoadmapScreen';
 import {
   getStudent, getEnrolledCourses, getGrades, getFriends, getRecommendations,
   addEnrollment, removeEnrollment, updateEnrollment, upsertCourse, getAllCourses, getLecturers,
+  addFriend, removeFriend, updateFriendGroup, addGrade,
 } from './db';
 import { DEFAULT_SEMESTER } from './semesters';
+
+const BgCanvas = () => (
+  <div className="bg-canvas" aria-hidden="true">
+    <div className="bg-orb bg-orb-1" />
+    <div className="bg-orb bg-orb-2" />
+    <div className="bg-orb bg-orb-3" />
+    <div className="bg-grid" />
+  </div>
+);
 
 const App = () => {
   const [session, setSession] = useState(undefined); // undefined = checking
@@ -33,6 +44,7 @@ const App = () => {
   const [dataLoading, setDataLoading] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [toasts, setToasts] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [addCourseOpen, setAddCourseOpen] = useState(false);
@@ -48,9 +60,10 @@ const App = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Load data when session is available
+  // Load data only when user ID changes (not on token refresh)
+  const userId = session?.user?.id;
   useEffect(() => {
-    if (!session) return;
+    if (!userId) return;
     setDataLoading(true);
     Promise.all([
       getStudent(),
@@ -69,7 +82,7 @@ const App = () => {
       setAllCourses(ac ?? []);
       setLecturers(lec ?? []);
     }).finally(() => setDataLoading(false));
-  }, [session]);
+  }, [userId]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -142,6 +155,38 @@ const App = () => {
     await removeEnrollment(code);
   };
 
+  const handleAddFriend = async (friend) => {
+    try {
+      await addFriend(friend);
+      setFriends(prev => [...prev, friend]);
+      setToasts(prev => [...prev, { id: Date.now(), title: 'חבר נוסף!', body: `${friend.name} נוסף לרשימת החברים` }]);
+    } catch (err) {
+      setToasts(prev => [...prev, { id: Date.now(), title: 'שגיאה', body: err?.message || 'הוספת החבר נכשלה', kind: 'error' }]);
+    }
+  };
+
+  const handleRemoveFriend = async (friendId) => {
+    setFriends(prev => prev.filter(f => f.id !== friendId));
+    try { await removeFriend(friendId); }
+    catch (err) { setToasts(prev => [...prev, { id: Date.now(), title: 'שגיאה', body: err?.message, kind: 'error' }]); }
+  };
+
+  const handleUpdateFriendGroup = async (friendId, grp) => {
+    setFriends(prev => prev.map(f => f.id === friendId ? { ...f, group: grp } : f));
+    try { await updateFriendGroup(friendId, grp); }
+    catch {}
+  };
+
+  const handleAddGrade = async (grade) => {
+    try {
+      await addGrade(grade);
+      setGrades(prev => [...prev, { ...grade, id: Date.now() }]);
+      setToasts(prev => [...prev, { id: Date.now(), title: 'ציון נשמר!', body: `${grade.course_name} · ${grade.grade ?? 'בתהליך'}` }]);
+    } catch (err) {
+      setToasts(prev => [...prev, { id: Date.now(), title: 'שגיאה', body: err?.message || 'שמירת הציון נכשלה', kind: 'error' }]);
+    }
+  };
+
   // Still checking session
   if (session === undefined) {
     return (
@@ -172,6 +217,7 @@ const App = () => {
     catalog:   ['קטלוג קורסים', `${allCourses.length} קורסים במאגר`],
     course:    ['פרטי קורס', null],
     grades:    ['ציונים', 'גליון אישי'],
+    whatif:    ['סימולטור What-if', 'הקרנת ממוצע לפי ציונים תיאורטיים'],
     recommend: ['המלצות', 'בחירות חכמות בשבילך'],
     friends:   ['חברים', 'קבוצות לימוד פעילות'],
     erd:       ['ארכיטקטורת מסד נתונים', 'תרשים ERD של המערכת'],
@@ -229,9 +275,11 @@ const App = () => {
           onCoursePick={handleEnrollFromCatalog}
         />;
       case 'grades':
-        return <GradesScreen grades={grades} />;
+        return <GradesScreen grades={grades} courses={courses} onNavigate={navigate} onAddGrade={handleAddGrade} />;
+      case 'whatif':
+        return <WhatIfScreen grades={grades} courses={courses} />;
       case 'friends':
-        return <FriendsScreen friends={friends} />;
+        return <FriendsScreen friends={friends} onAddFriend={handleAddFriend} onRemoveFriend={handleRemoveFriend} onUpdateGroup={handleUpdateFriendGroup} />;
       case 'erd':
         return <ERDScreen />;
       case 'settings':
@@ -245,7 +293,8 @@ const App = () => {
 
   return (
     <div className="app-shell">
-      <Sidebar active={route} onNavigate={navigate} student={student} />
+      <BgCanvas />
+      <Sidebar active={route} onNavigate={navigate} student={student} open={sidebarOpen} onToggle={() => setSidebarOpen(o => !o)} />
       <main className="app-main">
         <TopBar title={title} subtitle={subtitle} onBellClick={() => setNotifOpen(o => !o)}>
           {route === 'dashboard' && (

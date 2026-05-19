@@ -1,6 +1,6 @@
 import Icon from './Icon';
 
-export const Sidebar = ({ active, onNavigate, student }) => {
+export const Sidebar = ({ active, onNavigate, student, open = true, onToggle }) => {
   const planning = [
     { key: 'dashboard', label: 'דף הבית',      icon: 'logo' },
     { key: 'roadmap',   label: 'מפת התואר',    icon: 'map' },
@@ -8,8 +8,9 @@ export const Sidebar = ({ active, onNavigate, student }) => {
     { key: 'catalog',   label: 'קטלוג קורסים', icon: 'book' },
   ];
   const academic = [
-    { key: 'grades',    label: 'ציונים',         icon: 'graduation' },
-    { key: 'recommend', label: 'המלצות',          icon: 'sparkles' },
+    { key: 'grades',    label: 'ציונים',          icon: 'graduation' },
+    { key: 'whatif',    label: 'סימולטור What-if', icon: 'flask' },
+    { key: 'recommend', label: 'המלצות',           icon: 'sparkles' },
   ];
   const social = [
     { key: 'friends',  label: 'חברים',           icon: 'users' },
@@ -18,43 +19,60 @@ export const Sidebar = ({ active, onNavigate, student }) => {
   ];
 
   const NavItem = ({ item }) => (
-    <button className={`sb-item ${active === item.key ? 'active' : ''}`} onClick={() => onNavigate(item.key)}>
+    <button
+      className={`sb-item ${active === item.key ? 'active' : ''} ${!open ? 'collapsed' : ''}`}
+      onClick={() => onNavigate(item.key)}
+      title={!open ? item.label : undefined}
+    >
       <Icon name={item.icon} size={18} />
-      <span>{item.label}</span>
+      {open && <span>{item.label}</span>}
     </button>
   );
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${open ? '' : 'sidebar-collapsed'}`}>
+      {/* Brand */}
       <div className="sb-brand">
-        <Icon name="logo" size={36} />
-        <div>
-          <div className="sb-brand-name">Smart Scheduler</div>
-          <div className="sb-brand-sub">הקריה האקדמית אונו</div>
-        </div>
+        <div className="sb-logo"><Icon name="logo" size={open ? 34 : 28} /></div>
+        {open && (
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div className="sb-brand-name">Smart Scheduler</div>
+            <div className="sb-brand-sub">הקריה האקדמית אונו</div>
+          </div>
+        )}
+        <button className="sb-toggle-btn" onClick={onToggle} title={open ? 'כווץ סיידבר' : 'הרחב סיידבר'}>
+          <Icon name={open ? 'arrow-right' : 'arrow-left'} size={14} />
+        </button>
       </div>
 
-      <div className="sb-section-label">תכנון</div>
+      {/* Nav */}
+      {open && <div className="sb-section-label">תכנון</div>}
+      {!open && <div className="sb-divider" />}
       {planning.map(it => <NavItem key={it.key} item={it} />)}
 
-      <div className="sb-section-label">אקדמיה</div>
+      {open && <div className="sb-section-label">אקדמיה</div>}
+      {!open && <div className="sb-divider" />}
       {academic.map(it => <NavItem key={it.key} item={it} />)}
 
-      <div className="sb-section-label">מערכת</div>
+      {open && <div className="sb-section-label">מערכת</div>}
+      {!open && <div className="sb-divider" />}
       {social.map(it => <NavItem key={it.key} item={it} />)}
 
-      <div className="sb-user">
-        <span className="avatar av-purple" style={{ width: 36, height: 36, fontSize: 14 }}>
+      {/* User */}
+      <div className={`sb-user ${!open ? 'sb-user-collapsed' : ''}`}>
+        <span className="avatar av-purple" style={{ width: open ? 34 : 30, height: open ? 34 : 30, fontSize: 13, flexShrink: 0 }}>
           {student?.initial ?? '?'}
         </span>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, color: 'var(--fg-strong)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {student?.name ?? ''}
+        {open && (
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, color: '#b8dfc4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {student?.name ?? ''}
+            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#3d6e4a' }}>
+              {student?.program ?? ''}
+            </div>
           </div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)' }}>
-            {student?.program ?? ''}
-          </div>
-        </div>
+        )}
       </div>
     </aside>
   );
